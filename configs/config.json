@@ -1,0 +1,42 @@
+{
+  "name": "kvc",
+  "version": "1.0.0",
+  "dependencies": {
+  },
+  "local_repo_settings": {
+    "name": ["kvc_repo"],
+    "initial_file_name": "welcome.txt",
+    "sub_dir_names":{
+      "archive": "archive",
+      "logs": "logs",
+      "tree": "tree"
+    }
+  },
+  "messages": {
+    "error": {
+      "console_message": "\nAn error occurred, check logs file for more information\n",
+      "existing_repository_in_current_directory": "There is an existing kvc repository in current directory\n",
+      "creating_directory": "An error occurred while creating repository directory\n"
+    },
+    "success": {
+      "repository_created_successfully": "Repository created successfully\n"
+    }
+  },
+  "database": {
+    "initialization": {
+      "create_tables": {
+        "branches_sql": "CREATE TABLE IF NOT EXISTS branches (\nbranch_id integer PRIMARY KEY,\nname text NOT NULL,\ncreation_date text,\nend_date text,\ncreator text,\nalive boolean\n);",
+        "commits_sql": "CREATE TABLE IF NOT EXISTS commits (\ncommit_id integer PRIMARY KEY,\nbranch_id integer NOT NULL,\nname text NOT NULL,\ncreation_date text,\ncreator text,\nmessage text,\nstructure text,\nFOREIGN KEY (branch_id) REFERENCES branches (branch_id)\n);",
+        "files_sql": "CREATE TABLE IF NOT EXISTS files (\nfile_id integer PRIMARY KEY,\nname text NOT NULL,\nformat text,\narch_name text,\ncreation_date text,\nmodification_date text,\ncreator text,\nsize integer\n);"
+      }
+    },
+    "insert_data": {
+      "branch": "INSERT INTO branches(name,creation_date,end_date,creator,alive)\nVALUES(?,?,?,?,?)",
+      "commit": "INSERT INTO commits(branch_id,name,creation_date,creator,message,structure)\nVALUES(?,?,?,?,?,?)",
+      "file": "INSERT INTO files(name,format,arch_name,creation_date,modification_date,creator,size)\nVALUES(?,?,?,?,?,?,?)"
+    },
+    "find_data": {
+      "file": "SELECT * FROM files"
+    }
+  }
+}
