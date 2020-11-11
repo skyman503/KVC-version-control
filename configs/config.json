@@ -11,7 +11,8 @@
       "logs": "logs",
       "tree": "tree",
       "temp": "temp"
-    }
+    },
+    "commit_list_range": 5
   },
   "messages": {
     "error": {
@@ -21,7 +22,9 @@
     },
     "success": {
       "repository_created_successfully": "Repository created successfully\n",
-      "commit_created_successfully": "Commit created successfully\n"
+      "commit_created_successfully": "Commit created successfully\n",
+      "branch_created_successfully": "Branch created successfully\n",
+      "branch_merged_successfully": "Merged successfully\n"
     }
   },
   "database": {
@@ -39,9 +42,16 @@
     },
     "find_data": {
       "file": "SELECT * FROM files",
+      "commit": "SELECT * FROM commits",
+      "branch": "SELECT * FROM branches",
       "commit_by_id": "SELECT * FROM commits WHERE commit_id=?",
       "file_by_id": "SELECT * FROM files WHERE file_id=?",
-      "commit_by_name": "SELECT * FROM commits WHERE name=?"
+      "commit_by_name": "SELECT * FROM commits WHERE name=?",
+      "branch_by_name": "SELECT * FROM branches WHERE name=?"
+    },
+    "update_data": {
+      "commit_branch": "UPDATE commits SET branch_id = ? WHERE commit_id = ?",
+      "branch_alive": "UPDATE branches SET end_date = ?, alive = ? WHERE branch_id = ?"
     }
   }
 }

@@ -63,7 +63,7 @@ def commit(config, ignore_config, current_path, message):
     from .helpers.files_structure import get_files_tree
     from os import getlogin
     from json import load
-    from .helpers.database import create_commit, create_commit_db, check_if_file_in_db, add_file_db, get_commit_by_id, get_commit_by_name
+    from .helpers.database import create_commit, create_commit_db, check_if_file_in_db, add_file_db, get_commit_by_id
     import sqlite3
 
     files_tree = get_files_tree(ignore_config, current_path)
@@ -89,8 +89,8 @@ def commit(config, ignore_config, current_path, message):
             prev_id = str(check_if_file_in_db(config, files_tree[int(temp_structure_path[0])-1][1], '', '', '', conn))
             temp_structure_path_s = prev_id
             for component in range(1, (len(temp_structure_path)-1)):
-                tmp_id = '/' + str(check_if_file_in_db(config, files_tree[int(temp_structure_path[component])-1][1], ''
-                                                       , '', '', conn))
+                tmp_id = '/' + str(check_if_file_in_db(config, files_tree[int(temp_structure_path[component])-1][1], '',
+                                                       '', '', conn))
                 temp_structure_path_s += tmp_id
             temp_structure_path_s = temp_structure_path_s + '/' + str(file_id)
             new_file[2] = temp_structure_path_s
@@ -110,7 +110,7 @@ def commit(config, ignore_config, current_path, message):
 def commit_jump(config, current_path, commit_name, ignore_config):
     import sqlite3
     from .helpers.database import get_commit_by_name
-    from .helpers.files_structure import build_repository_from_structure, make_dir
+    from .helpers.files_structure import build_repository_from_structure
     temp_path = current_path + "\\" + config["local_repo_settings"]["name"][0] + '\\'
     conn = sqlite3.connect(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'tree.db')
     if commit_name == 'prev':
@@ -123,10 +123,86 @@ def commit_jump(config, current_path, commit_name, ignore_config):
     if not commit_object:
         print("Commit of given name do not exist")
     else:
-        #make_dir(commit_object[0][6])
         build_repository_from_structure(config, conn, current_path, commit_object[0][6], ignore_config)
         head_update(config, current_path, '', commit_object[0][2])
     return 1
 
-def commit_list(scale, amount):
-    pass
+
+def commit_list(config, current_path, scale):
+    import sqlite3
+    from .helpers.database import get_commit_all
+    from json import load
+    temp_path = current_path + "\\" + config["local_repo_settings"]["name"][0] + '\\'
+    conn = sqlite3.connect(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'tree.db')
+    with open(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'head.json', mode='r') \
+            as head_config_file:
+        head_config = load(head_config_file)
+    commits_object = get_commit_all(config, conn)
+    counter = config["local_repo_settings"]["commit_list_range"]
+    for commit_id in range((len(commits_object)-1), -1, -1):
+        if (scale == 1) and (commits_object[commit_id][1] == head_config["branch_id"]):
+            if counter > 0:
+                print(commits_object[commit_id][0], commits_object[commit_id][2], commits_object[commit_id][3],
+                      commits_object[commit_id][4], commits_object[commit_id][5])
+                counter -= 1
+        elif scale == 2:
+            print(commits_object[commit_id][0], commits_object[commit_id][2], commits_object[commit_id][3],
+                  commits_object[commit_id][4], commits_object[commit_id][5])
+
+
+def branch_create(config, current_path, name):
+    import sqlite3
+    from os import getlogin
+    from .helpers.database import get_branch_all, create_branch, create_branch_db
+    permission = True
+    temp_path = current_path + "\\" + config["local_repo_settings"]["name"][0] + '\\'
+    conn = sqlite3.connect(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'tree.db')
+    branches_object = get_branch_all(config, conn)
+    for branch in branches_object:
+        if branch[1] == name:
+            permission = False
+            print("Branch already exists")
+    if permission:
+        user = getlogin()
+        new_branch = create_branch(name, user, 1)
+        create_branch_db(conn, new_branch, config)
+        print("Branch created successfully")
+        update_logs(temp_path + config["local_repo_settings"]["sub_dir_names"]["logs"] + '\\' + 'logs.txt',
+                    (str(name)+' '+config["messages"]["success"]["branch_created_successfully"]))
+
+
+def branch_swap(config, current_path, name, ignore_config):
+    import sqlite3
+    from .helpers.files_structure import build_repository_from_structure
+    from.helpers.database import get_commit_all, get_branch_by_name, get_commit_by_name
+    temp_path = current_path + "\\" + config["local_repo_settings"]["name"][0] + '\\'
+    conn = sqlite3.connect(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'tree.db')
+    commits_object = get_commit_all(config, conn)
+    new_branch_object = get_branch_by_name(config, conn, name)
+    if new_branch_object:
+        if new_branch_object[0][5] == 1:
+            new_branch_id = new_branch_object[0][0]
+            permission = True
+            for commit_id in range((len(commits_object)-1), -1, -1):
+                if permission and (commits_object[commit_id][1] == new_branch_id):
+                    new_current_commit = commits_object[commit_id][2]
+                    head_update(config, current_path, new_branch_id, new_current_commit)
+                    commit_object = get_commit_by_name(config, conn, new_current_commit)
+                    build_repository_from_structure(config, conn, current_path, commit_object[0][6], ignore_config)
+                    permission = False
+            if permission:
+                head_update(config, current_path, new_branch_id, '')
+        else:
+            print("Error occurred(probably destination branch is not alive)")
+
+
+def branch_merge(config, current_path, name1, name2):
+    import sqlite3
+    from .helpers.database import branch_merge_update
+    temp_path = current_path + "\\" + config["local_repo_settings"]["name"][0] + '\\'
+    conn = sqlite3.connect(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'tree.db')
+    output = branch_merge_update(config, conn, name1, name2)
+    if output == 1:
+        update_logs(temp_path + config["local_repo_settings"]["sub_dir_names"]["logs"] + '\\' + 'logs.txt',
+                    (str(name1) + ' -> ' + str(name2) + ' ' + config["messages"]["success"]["branch_merged_successfully"]))
+

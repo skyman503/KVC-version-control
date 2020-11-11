@@ -84,11 +84,70 @@ def get_commit_by_name(config, conn, commit_name):
     return commit_object
 
 
+def get_commit_all(config, conn):
+    c = conn.cursor()
+    c.execute(config["database"]["find_data"]["commit"])
+    commits_object = c.fetchall()
+    return commits_object
+
+
 def get_file_by_id(config, conn, file_id):
     c = conn.cursor()
     c.execute(config["database"]["find_data"]["file_by_id"], (file_id,))
     file_object = c.fetchall()
     return file_object
+
+
+def get_branch_by_name(config, conn, branch_name):
+    c = conn.cursor()
+    c.execute(config["database"]["find_data"]["branch_by_name"], (branch_name,))
+    branch_object = c.fetchall()
+    return branch_object
+
+
+def get_branch_all(config, conn):
+    c = conn.cursor()
+    c.execute(config["database"]["find_data"]["branch"])
+    branches_object = c.fetchall()
+    return branches_object
+
+
+def update_commit(config, conn, commit_id, branch_id):
+    c = conn.cursor()
+    c.execute(config["database"]["update_data"]["commit_branch"], (branch_id, commit_id))
+    conn.commit()
+    return 1
+
+
+def update_branch(config, conn, branch_id):
+    from .datetime_helper import get_current_datetime
+    end_date = get_current_datetime()
+    c = conn.cursor()
+    c.execute(config["database"]["update_data"]["branch_alive"], (end_date, 0, branch_id))
+    conn.commit()
+    return 1
+
+
+def branch_merge_update(config, conn, branch_name_1, branch_name_2):
+    branch_1 = get_branch_by_name(config, conn, branch_name_1)
+    branch_2 = get_branch_by_name(config, conn, branch_name_2)
+    if branch_1 and branch_2:
+        if (branch_1[0][5] == 1) and (branch_2[0][5] == 1):
+            branch_id_1 = branch_1[0][0]
+            branch_id_2 = branch_2[0][0]
+            update_branch(config, conn, branch_id_1)
+            commit_object = get_commit_all(config, conn)
+            for commit in commit_object:
+                if commit[1] == branch_id_1:
+                    update_commit(config, conn, commit[0], branch_id_2)
+            print("Branch merged successfully current branch:", branch_name_2)
+            return 1
+        else:
+            print("Error occurred(probably branch is not alive)")
+            return 0
+    else:
+        print("Error occurred(probably wrong branch name)")
+        return 0
 
 
 def add_file(config, tree_record):
