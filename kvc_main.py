@@ -13,8 +13,6 @@ def run():
         config = json.load(json_data_file)
     with open(os.path.join(system_path, r"configs\ignore.json")) as json_data_file:
         ignore_config = json.load(json_data_file)
-    with open(os.path.join(system_path, r"configs\head.json")) as json_data_file:
-        head_config = json.load(json_data_file)
 
     for arg in sys.argv:
         args.append(arg)
@@ -25,9 +23,34 @@ def run():
         '''Finding correct function'''
         if args[1] == 'init':
             core.repo_init(config, current_path)  # kvc init
+        elif args[1] == 'commit-list':
+            pass
+        elif args[1] == 'commit-list-full':
+            pass
+        elif args[1] == 'commit-prev':
+            core.commit_jump(config, current_path, 'prev', ignore_config)
+        elif args[1] == 'commit-jump':
+            if len(args) > 2:
+                core.commit_jump(config, current_path, args[2], ignore_config)
+            else:
+                print("No jump occurred(invalid commit name)")
         elif args[1] == 'commit':
-            core.commit(config, ignore_config, head_config, current_path, 'e')
-
+            if len(args) > 2:
+                s = ' '
+                message = s.join(args[2:])
+            else:
+                message = 'default message'
+            core.commit(config, ignore_config, current_path, message)
+        elif args[1] == 'branch-creation':
+            if len(args) > 2:
+                pass
+            else:
+                print("Branch won't be created(name not specified)")
+        elif args[1] == 'branch-swap':
+            if len(args) > 2:
+                pass
+            else:
+                print("Branch wasn't changed(name not specified)")
     return None
 
 

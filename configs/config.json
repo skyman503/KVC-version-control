@@ -9,7 +9,8 @@
     "sub_dir_names":{
       "archive": "archive",
       "logs": "logs",
-      "tree": "tree"
+      "tree": "tree",
+      "temp": "temp"
     }
   },
   "messages": {
@@ -19,7 +20,8 @@
       "creating_directory": "An error occurred while creating repository directory\n"
     },
     "success": {
-      "repository_created_successfully": "Repository created successfully\n"
+      "repository_created_successfully": "Repository created successfully\n",
+      "commit_created_successfully": "Commit created successfully\n"
     }
   },
   "database": {
@@ -36,7 +38,10 @@
       "file": "INSERT INTO files(name,format,arch_name,creation_date,modification_date,creator,size)\nVALUES(?,?,?,?,?,?,?)"
     },
     "find_data": {
-      "file": "SELECT * FROM files"
+      "file": "SELECT * FROM files",
+      "commit_by_id": "SELECT * FROM commits WHERE commit_id=?",
+      "file_by_id": "SELECT * FROM files WHERE file_id=?",
+      "commit_by_name": "SELECT * FROM commits WHERE name=?"
     }
   }
 }

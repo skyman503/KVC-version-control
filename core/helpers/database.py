@@ -48,7 +48,7 @@ def add_initial_db(config, current_path, conn):
     new_name = get_file_name(current_path, initial_name)
     file_creation_sql = config["database"]["insert_data"]["file"]
     file_data = (initial_name.split('.')[0], initial_name.split('.')[-1], new_name[0], get_current_datetime(),
-                 new_name[1], getlogin(), get_file_size(current_path))
+                 str(new_name[1]), getlogin(), get_file_size(current_path))
     c = conn.cursor()
     c.execute(file_creation_sql, file_data)
     conn.commit()
@@ -68,6 +68,27 @@ def check_if_file_in_db(config, file_name, file_size, file_mod_date, file_type, 
             if file_name == record[1]:
                 return record[0]
     return -1
+
+
+def get_commit_by_id(config, conn, commit_id):
+    c = conn.cursor()
+    c.execute(config["database"]["find_data"]["commit_by_id"], (commit_id,))
+    commit_object = c.fetchall()
+    return commit_object
+
+
+def get_commit_by_name(config, conn, commit_name):
+    c = conn.cursor()
+    c.execute(config["database"]["find_data"]["commit_by_name"], (commit_name,))
+    commit_object = c.fetchall()
+    return commit_object
+
+
+def get_file_by_id(config, conn, file_id):
+    c = conn.cursor()
+    c.execute(config["database"]["find_data"]["file_by_id"], (file_id,))
+    file_object = c.fetchall()
+    return file_object
 
 
 def add_file(config, tree_record):
@@ -90,18 +111,26 @@ def add_file(config, tree_record):
     return name, file_format, arch_name, c_date, m_date, getlogin(), size
 
 
-def add_file_db(config, conn, tree_record):
+def add_file_db(config, current_path, conn, tree_record, ignore_config):
+    from .files_structure import copy_file_and_move_to_archive
     c = conn.cursor()
     data = add_file(config, tree_record)
     c.execute(config["database"]["insert_data"]["file"], data)
     conn.commit()
+    if data[1] != 'directory':
+        copy_file_and_move_to_archive(config, current_path, tree_record[6], data[2], ignore_config)
     return c.lastrowid
 
 
 def create_default_db(config, current_path, user):
+    from json import dump
     temp_path = current_path + "\\" + config["local_repo_settings"]["name"][0] + '\\'
     '''Creating new sqlite database'''
     try:
+        with open(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'head.json', mode='w') \
+                as head_json_file:
+            initial_head_data = {"branch_id": 1, "current_commit": "."}
+            dump(initial_head_data, head_json_file)
         conn = sqlite3.connect(temp_path + config["local_repo_settings"]["sub_dir_names"]["tree"] + '\\' + 'tree.db')
         if conn is not None:
             create_table(conn, config["database"]["initialization"]["create_tables"]["branches_sql"])
@@ -112,9 +141,9 @@ def create_default_db(config, current_path, user):
             branch_master_id = create_branch_db(conn, branch_master, config)
             initial_commit = create_commit(config, branch_master_id, user, "repository created", structure='1')
             initial_commit_id = create_commit_db(conn, initial_commit, config)
-            with open((current_path + '\\' + config["local_repo_settings"]["initial_file_name"]), mode='a') \
-                    as initial_welcome_file:
-                initial_welcome_file.write('Your repository was created')
+            initial_welcome_file = open((current_path + '\\' + config["local_repo_settings"]["initial_file_name"]), mode='a')
+            initial_welcome_file.write('Your repository was created')
+            initial_welcome_file.close()
             add_initial_db(config, (current_path + '\\' + config["local_repo_settings"]["initial_file_name"]), conn)
             check_if_file_in_db(config,1,1,1,1,conn)
     except sqlite3.Error as e:
