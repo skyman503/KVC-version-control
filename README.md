@@ -1,7 +1,7 @@
 # KVC-version-control
 Local version control system <br/>
 Memory optimized by saving only unique files each commit(like git does) <br/>
-Works on Windows (Possibly Linux also, but not tested yet)
+Works on Windows (Possibly also Linux, but not tested yet)
 ## Installation
 Clone repository to Your chosen directory<br/>
 Add directory to the system path
