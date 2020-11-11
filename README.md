@@ -30,7 +30,7 @@ kvc_main.py commit-list-full #Prints out all commits at all branches
 kvc_main.py branch-creation (branch name) #Creates new branch
 ```
 ```bash
-kvc_main.py branch-swap (branch_name_from) (branch_name_to) #Changes current working branch
+kvc_main.py branch-swap (branch_name) #Changes current working branch
 ```
 ```bash
 kvc_main.py branch-merge (branch_name_being_merged) (branch_name_merged_to) #Merges 2 branches
